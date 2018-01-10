@@ -7,12 +7,27 @@
 //
 
 import UIKit
-
+@IBDesignable
 class PlayingCardView: UIView {
     
+    @IBInspectable
     var rank : Int = 5 { didSet{ setNeedsDisplay();setNeedsLayout()}}
+    @IBInspectable
     var suit : String = "♥️"{ didSet{ setNeedsDisplay();setNeedsLayout()}}
+    @IBInspectable
     var isFacedUp:Bool = true{ didSet{ setNeedsDisplay();setNeedsLayout()}}
+    
+    var faceCardScale:CGFloat = SizeRatio.faceCardImageSizeToBoundsSize{ didSet{ setNeedsDisplay();setNeedsLayout()}}
+    
+    @objc func adjustFaceCardScale(byHandlingGestureRecognizedBy recognizer:UIPinchGestureRecognizer){
+        switch recognizer.state{
+        case .changed, .ended:
+            faceCardScale *= recognizer.scale
+            recognizer.scale = 1.0
+        default:break
+        }
+    }
+
     
     private func centeredAttributedString(_ string:String,fontSize:CGFloat) -> NSAttributedString{
         var font = UIFont.preferredFont(forTextStyle: .body).withSize(fontSize)
@@ -59,7 +74,7 @@ class PlayingCardView: UIView {
         lowerRightCornnerLabel.frame.origin = CGPoint(x: bounds.maxX, y: bounds.maxY).offsetBy(dx: -cornerOffset, dy: -cornerOffset).offsetBy(dx: -lowerRightCornnerLabel.frame.size.width, dy: -lowerRightCornnerLabel.frame.size.height)
     }
     
-    private func drawPips()
+    private func drawPips() // 1, 2, 3, 4, ... 那些 中间画点东西
     {
         let pipsPerRowForRank = [[0],[1],[1,1],[1,1,1],[2,2],[2,1,2],[2,2,2],[2,1,2,2],[2,2,2,2],[2,2,1,2,2],[2,2,2,2,2]]
         
@@ -105,8 +120,17 @@ class PlayingCardView: UIView {
         roundedRect.addClip()
         UIColor.white.setFill()
         roundedRect.fill()
-        if let faceCardImage = UIImage(named: rankString+suit){
-            faceCardImage.draw(in: bounds.zoom(by: SizeRatio.faceCardImageSizeToBoundsSize))
+        if isFacedUp{
+//            if let faceCardImage = UIImage(named: rankString+suit){
+            if let faceCardImage = UIImage(named: rankString+suit, in: Bundle(for:self.classForCoder), compatibleWith: traitCollection){
+                faceCardImage.draw(in: bounds.zoom(by: faceCardScale))
+            }else{
+                drawPips()
+            }
+        }else{
+            if let cardBackImage = UIImage(named:"cardback"){
+                    cardBackImage.draw(in: bounds)
+            }
         }
         
         /*
